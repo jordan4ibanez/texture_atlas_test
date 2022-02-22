@@ -38,7 +38,7 @@ pub fn create_image_buffer(path: &str) -> ImageBuffer<Rgba<u8>, Vec<u8>> {
 }
 
 
-fn iterate_mod_textures(packer: &mut TexturePacker<DynamicImage, &str>){
+fn iterate_mod_textures(packer: &mut TexturePacker<DynamicImage, String>){
     
     let mods: ReadDir = fs::read_dir(with_path("/mods/")).unwrap();
 
@@ -76,27 +76,16 @@ fn iterate_mod_textures(packer: &mut TexturePacker<DynamicImage, &str>){
                                             let texture_file_path_literal = texture_file_path.as_os_str().to_str().unwrap();
                                             let length_of_name = &texture_file_name.len();
 
-                                            let texture_file_clone = texture_file.file_name().clone().to_owned();
-
                                             // trim file name to .png
                                             let mut texture_file_name_mod = texture_file_name.clone();
                                             texture_file_name_mod.drain(0..length_of_name-4);
                                             
                                             if texture_file_name_mod.eq(".png") {
 
-
-                                                // REALLY juggling the borrower
-                                                let texture_file_literal = texture_file_path_literal;
-
-                                                let file_name = texture_file_clone.as_os_str().to_owned();
-
-                                                let path = Path::new(texture_file_literal);
+                                                let path = Path::new(texture_file_path_literal);
                                                 let texture = ImageImporter::import_from_file(path).expect("UNABLE TO LOAD TEXTURE");
 
-                                                // this is horrible - a literal forced memory leak
-                                                let my_string: &'static str = Box::leak(String::from(file_name.clone().to_str().unwrap().to_string()).into_boxed_str());
-
-                                                packer.pack_own(my_string, texture).unwrap();
+                                                packer.pack_own(texture_file_name.to_string(), texture).unwrap();
                                             }
                                         },
                                         Err(error) => {
@@ -130,8 +119,8 @@ fn iterate_mod_textures(packer: &mut TexturePacker<DynamicImage, &str>){
 fn main() {
 
     let config = TexturePackerConfig {
-        max_width: 16*32,
-        max_height: 16*32,
+        max_width: 16*64,
+        max_height: 16*64,
         allow_rotation: false,
         texture_outlines: false,
         border_padding: 0,
@@ -140,7 +129,7 @@ fn main() {
         trim: false,
     };
     
-    let mut packer: TexturePacker<DynamicImage, &str> = TexturePacker::new_skyline(config);
+    let mut packer: TexturePacker<DynamicImage, String> = TexturePacker::new_skyline(config);
 
     iterate_mod_textures(&mut packer);
 
