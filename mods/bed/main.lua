@@ -1,0 +1,1 @@
+print("beds are for sleeping")

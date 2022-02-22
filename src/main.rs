@@ -52,6 +52,8 @@ fn main() {
     };
     
     let mut packer = TexturePacker::new_skyline(config);
+
+
     let path_str = with_path("/texture/debug_alpha.png");
     let path = Path::new(path_str.as_str());
     let texture = ImageImporter::import_from_file(path).expect("unable to import file");
