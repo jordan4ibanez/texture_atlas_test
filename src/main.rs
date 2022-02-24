@@ -1,8 +1,11 @@
 
-use std::{io::BufReader, fs::{File, self, ReadDir}, path::Path, borrow::Borrow};
+use std::{io::{BufReader, Read}, fs::{File, self, ReadDir}, path::Path, borrow::Borrow, str::from_utf8, ops::Add};
+
+
 
 use image::{ImageBuffer, Rgba, DynamicImage};
 
+use rlua::{Lua, ToLua, FromLua, Context, Table};
 use texture_packer::{
     exporter::ImageExporter, importer::ImageImporter,
     TexturePacker, TexturePackerConfig, texture,
@@ -13,7 +16,7 @@ pub fn with_path(path: &str) -> String {
 }
 
 pub fn load_resource(path: String) -> String {    
-    let resource_result = fs::read_to_string(get_path_string() + &path);    
+    let resource_result = fs::read_to_string(get_path_string() + path.as_str());    
 
     match resource_result {
         Ok(data) => data,
@@ -115,9 +118,63 @@ fn iterate_mod_textures(packer: &mut TexturePacker<DynamicImage, String>){
     }
 }
 
+#[derive(Debug)]
+pub struct Block {
+    name: String,
+    texture: String
+}
+
+fn register_block(current_list: &mut Vec<Block>, name: &str, texture: &str) {
+    let pushing_block: Block = Block {
+        name: name.to_string(),
+        texture: texture.to_string(),
+    };
+
+    current_list.push(pushing_block);
+}
+
+
 
 fn main() {
 
+
+    let lua: Lua = Lua::new();
+
+    lua.context( | lua_context | {
+        lua_context.load(r#"
+        crafter = {}
+        crafter.test = "hi"
+        crafter.blah = "oh my god"
+        crafter.number = 5
+        "#).exec()
+    }).unwrap();
+
+    lua.context( | lua_context | {
+        lua_context.load(r#"
+        print(crafter.test)
+        "#).exec()
+    }).unwrap();
+
+    lua.context( | lua_context | {
+        lua_context.set_named_registry_value("global", true).unwrap();
+    });    
+
+    lua.context( | lua_context | {
+        lua_context.create_registry_value("test").unwrap();
+        let test = lua_context.globals();
+
+        let result_table = test.get::<&str, Table>("crafter").unwrap();
+
+        for pair in result_table.pairs::<String, String>() {
+            println!("{:?}", pair.unwrap());
+        }
+    });
+
+    //rlua::FromLua::from_lua("crafter", lua)
+
+    
+
+    /*
     let config = TexturePackerConfig {
         max_width: 16*64,
         max_height: 16*64,
@@ -128,10 +185,11 @@ fn main() {
         texture_extrusion: 0,
         trim: false,
     };
+    */
     
-    let mut packer: TexturePacker<DynamicImage, String> = TexturePacker::new_skyline(config);
+    // let mut packer: TexturePacker<DynamicImage, String> = TexturePacker::new_skyline(config);
 
-    iterate_mod_textures(&mut packer);
+    // iterate_mod_textures(&mut packer);
 
 
     /*
@@ -144,9 +202,11 @@ fn main() {
 
     
 
+    /*
     let exporter = ImageExporter::export(&packer).unwrap();
         let mut file = File::create(with_path("/blah.png")).unwrap();
         exporter
             .write_to(&mut file, image::ImageFormat::Png)
             .unwrap();
+    */
 }
