@@ -149,22 +149,101 @@ fn load_lua_file(path: &str) -> String {
 
 fn main() {
 
+    // the debug "block component system"
+
+    let mut id: Vec<u32> = Vec::new();
+    let mut c_mod: Vec<String> = Vec::new();
+    let mut name: Vec<String> = Vec::new();
+    let mut texture: Vec<String> = Vec::new();
+
+
 
     let lua: Lua = Lua::new();
 
     lua.load(&load_lua_file("/context.lua")).exec().unwrap();
 
-
-
-    /*
+    
     let test: Table = lua.globals().raw_get("crafter").unwrap();
 
-    for value in test.pairs::<String, Table>() {
-        if value.unwrap().0.eq("blocks") {
-            println!("FOUND BLOCKS")
-        }
+    let blocks: Table = test.get("blocks").unwrap();
+
+    /*
+    iterating -> crafter = {
+        ....
     }
     */
+
+
+
+            /*
+            crafter = {
+   iterating -> blocks = {
+
+                }
+            }
+            */
+    
+    for blocks in blocks.pairs::<String, Table>() {
+
+        let unwrapped_blocks: (String, Table);
+
+        if blocks.is_ok() {
+            unwrapped_blocks = blocks.unwrap();
+        } else {
+            panic!("ERROR INITIALIZING ROOT blocks TABLE!");
+        }
+
+
+        /*
+        crafter = {
+            blocks = {
+    iterating -> dirt = {
+                    def = value
+                    next step
+                    def = value
+                }
+            }
+        }
+        */
+
+        // bool checks
+        let name_checked = false;
+        let texture_check = false;
+
+
+        // push ID generically
+        id.push((id.len() + 1) as u32);
+
+        /*
+        push mod to default as debug
+        in final implementation this will track the mod name and implement it accordingly
+        */
+
+        c_mod.push("default".to_string());
+
+        println!("NEW BLOCK!");
+
+
+        for definition in unwrapped_blocks.1.pairs::<String, String>() {
+            
+
+            let unwrapped_definition: (String, String) = definition.unwrap();
+
+            // add to internal block component system with ID in final implementation
+
+            println!("{}, {}", unwrapped_definition.0, unwrapped_definition.1);
+
+            // this will need to push a result in final implementation
+
+            match unwrapped_definition.0.as_str() {
+                "name" => name.push(unwrapped_definition.1),
+                "texture" => texture.push(unwrapped_definition.1),
+                _ => println!("SOMETHING HAS GONE WRONG!")                        
+            }
+        }
+    }
+        
+    
 
     //rlua::FromLua::from_lua("crafter", lua)
 
