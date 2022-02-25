@@ -5,7 +5,7 @@ use std::{io::{BufReader, Read}, fs::{File, self, ReadDir}, path::Path, borrow::
 
 use image::{ImageBuffer, Rgba, DynamicImage};
 
-use rlua::{Lua, ToLua, FromLua, Context, Table};
+use mlua::{Lua, Table, FromLua};
 use texture_packer::{
     exporter::ImageExporter, importer::ImageImporter,
     TexturePacker, TexturePackerConfig, texture,
@@ -133,6 +133,18 @@ fn register_block(current_list: &mut Vec<Block>, name: &str, texture: &str) {
     current_list.push(pushing_block);
 }
 
+fn load_lua_file(path: &str) -> String {
+    let mut file: File = File::open(with_path(path)).unwrap();
+
+    let mut buffer: Vec<u8> = Vec::new();
+    file.read_to_end(&mut buffer).unwrap();
+
+    let text_str: &str = from_utf8(&buffer).unwrap();
+
+    let test_string = text_str.clone().to_string().to_owned();
+
+    test_string
+}
 
 
 fn main() {
@@ -140,35 +152,19 @@ fn main() {
 
     let lua: Lua = Lua::new();
 
-    lua.context( | lua_context | {
-        lua_context.load(r#"
-        crafter = {}
-        crafter.test = "hi"
-        crafter.blah = "oh my god"
-        crafter.number = 5
-        "#).exec()
-    }).unwrap();
+    lua.load(&load_lua_file("/context.lua")).exec().unwrap();
 
-    lua.context( | lua_context | {
-        lua_context.load(r#"
-        print(crafter.test)
-        "#).exec()
-    }).unwrap();
 
-    lua.context( | lua_context | {
-        lua_context.set_named_registry_value("global", true).unwrap();
-    });    
 
-    lua.context( | lua_context | {
-        lua_context.create_registry_value("test").unwrap();
-        let test = lua_context.globals();
+    /*
+    let test: Table = lua.globals().raw_get("crafter").unwrap();
 
-        let result_table = test.get::<&str, Table>("crafter").unwrap();
-
-        for pair in result_table.pairs::<String, String>() {
-            println!("{:?}", pair.unwrap());
+    for value in test.pairs::<String, Table>() {
+        if value.unwrap().0.eq("blocks") {
+            println!("FOUND BLOCKS")
         }
-    });
+    }
+    */
 
     //rlua::FromLua::from_lua("crafter", lua)
 
