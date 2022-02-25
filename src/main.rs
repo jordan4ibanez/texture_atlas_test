@@ -171,8 +171,13 @@ fn main() {
     // (number of textures, biggest_width, biggest height)
     let config_values: (u32, u32, u32) = configure_texture_atlas();
 
-    let configged_width: u32 = config_values.0 / 2;
-    let configged_height: u32 = config_values.0 /2;
+    println!("{:?}", config_values);
+
+    let configged_width: u32 = (config_values.0 + 2) / 2;
+    let configged_height: u32 = (config_values.0 + 2) / 2;
+
+    println!("{configged_width}");
+    println!("{configged_height}");
 
     let config = TexturePackerConfig {
         max_width: config_values.1 * configged_width,
@@ -259,7 +264,7 @@ fn main() {
         in final implementation this will track the mod name and implement it accordingly
         */
 
-        c_mod.push("default".to_string());
+        // c_mod.push("default".to_string());
 
         println!("NEW BLOCK!");
 
@@ -278,6 +283,7 @@ fn main() {
             match unwrapped_definition.0.as_str() {
                 "name" => name.push(unwrapped_definition.1),
                 "texture" => texture.push(unwrapped_definition.1),
+                "mod" => c_mod.push(unwrapped_definition.1),
                 _ => println!("SOMETHING HAS GONE WRONG!")                        
             }
         }
@@ -291,26 +297,6 @@ fn main() {
 
         iter_value += 1;
     }
-
-    //rlua::FromLua::from_lua("crafter", lua)
-
-    
-
-    
-
-    // iterate_mod_textures(&mut packer);
-
-
-    /*
-    let path_str = with_path("/texture/debug_alpha.png");
-    let path = Path::new(path_str.as_str());
-    let texture = ImageImporter::import_from_file(path).expect("unable to import file");
-
-    packer.pack_own("debug_alpha", texture).unwrap();
-    */
-
-    
-
     
     let exporter = ImageExporter::export(&packer).unwrap();
         let mut file = File::create(with_path("/blah.png")).unwrap();
