@@ -1,9 +1,10 @@
 
+use core::num;
 use std::{io::{BufReader, Read}, fs::{File, self, ReadDir}, path::Path, borrow::Borrow, str::from_utf8, ops::Add};
 
 
 
-use image::{ImageBuffer, Rgba, DynamicImage};
+use image::{ImageBuffer, Rgba, DynamicImage, GenericImageView};
 
 use mlua::{Lua, Table, FromLua};
 use texture_packer::{
@@ -41,8 +42,13 @@ pub fn create_image_buffer(path: &str) -> ImageBuffer<Rgba<u8>, Vec<u8>> {
 }
 
 
-fn iterate_mod_textures(packer: &mut TexturePacker<DynamicImage, String>){
+// returns (number_of_textures, biggest_size_width, biggest_size_height)
+fn configure_texture_atlas() -> (u32, u32, u32) {
     
+    // size in pixels
+    let mut biggest_size: (u32, u32) = (0,0);
+    let mut number_of_textures: u32 = 0;
+
     let mods: ReadDir = fs::read_dir(with_path("/mods/")).unwrap();
 
     // iterate mods directory
@@ -85,10 +91,21 @@ fn iterate_mod_textures(packer: &mut TexturePacker<DynamicImage, String>){
                                             
                                             if texture_file_name_mod.eq(".png") {
 
+                                                number_of_textures += 1;
+
                                                 let path = Path::new(texture_file_path_literal);
                                                 let texture = ImageImporter::import_from_file(path).expect("UNABLE TO LOAD TEXTURE");
 
-                                                packer.pack_own(texture_file_name.to_string(), texture).unwrap();
+                                                // packer.pack_own(texture_file_name.to_string(), texture).unwrap();
+
+                                                if texture.width() > biggest_size.0 {
+                                                    biggest_size.0 = texture.width();
+                                                }
+                                                if texture.height() > biggest_size.1 {
+                                                    biggest_size.1 = texture.height();
+                                                }
+
+                                                drop(texture);
                                             }
                                         },
                                         Err(error) => {
@@ -116,6 +133,8 @@ fn iterate_mod_textures(packer: &mut TexturePacker<DynamicImage, String>){
             }
         }
     }
+
+    (number_of_textures, biggest_size.0, biggest_size.1)
 }
 
 fn load_block_texture(name: String, texture_name: String, mod_name: String, packer: &mut TexturePacker<DynamicImage, String>) {  
@@ -149,10 +168,15 @@ fn load_lua_file(path: &str) -> String {
 
 fn main() {
 
+    // (number of textures, biggest_width, biggest height)
+    let config_values: (u32, u32, u32) = configure_texture_atlas();
+
+    let configged_width: u32 = config_values.0 / 2;
+    let configged_height: u32 = config_values.0 /2;
 
     let config = TexturePackerConfig {
-        max_width: 16*64,
-        max_height: 16*64,
+        max_width: config_values.1 * configged_width,
+        max_height: config_values.2 * configged_height,
         allow_rotation: false,
         texture_outlines: false,
         border_padding: 0,
@@ -179,7 +203,6 @@ fn main() {
 
     lua.load(&load_lua_file("/context.lua")).exec().unwrap();
 
-    
     let test: Table = lua.globals().raw_get("crafter").unwrap();
 
     let blocks: Table = test.get("blocks").unwrap();
