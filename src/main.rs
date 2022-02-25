@@ -118,20 +118,20 @@ fn iterate_mod_textures(packer: &mut TexturePacker<DynamicImage, String>){
     }
 }
 
-#[derive(Debug)]
-pub struct Block {
-    name: String,
-    texture: String
+fn load_block_texture(name: String, texture_name: String, mod_name: String, packer: &mut TexturePacker<DynamicImage, String>) {  
+    
+    let owned_path = with_path(&("/mods/".to_string() + &mod_name + "/textures/" + &texture_name)).clone();
+
+    println!("{owned_path}");
+
+    let path = Path::new(&owned_path);
+
+    let texture = ImageImporter::import_from_file(path).expect("UNABLE TO LOAD TEXTURE");
+
+    packer.pack_own(name, texture).unwrap();
 }
 
-fn register_block(current_list: &mut Vec<Block>, name: &str, texture: &str) {
-    let pushing_block: Block = Block {
-        name: name.to_string(),
-        texture: texture.to_string(),
-    };
 
-    current_list.push(pushing_block);
-}
 
 fn load_lua_file(path: &str) -> String {
     let mut file: File = File::open(with_path(path)).unwrap();
@@ -148,6 +148,23 @@ fn load_lua_file(path: &str) -> String {
 
 
 fn main() {
+
+
+    let config = TexturePackerConfig {
+        max_width: 16*64,
+        max_height: 16*64,
+        allow_rotation: false,
+        texture_outlines: false,
+        border_padding: 0,
+        texture_padding: 0,
+        texture_extrusion: 0,
+        trim: false,
+    };
+    
+    
+    let mut packer: TexturePacker<DynamicImage, String> = TexturePacker::new_skyline(config);
+
+
 
     // the debug "block component system"
 
@@ -243,26 +260,20 @@ fn main() {
         }
     }
         
-    
+    let mut iter_value = 0;
+
+    for block_name in name.iter() {
+
+        load_block_texture(block_name.to_string(), texture[iter_value].clone(), c_mod[iter_value].clone(), &mut packer);
+
+        iter_value += 1;
+    }
 
     //rlua::FromLua::from_lua("crafter", lua)
 
     
 
-    /*
-    let config = TexturePackerConfig {
-        max_width: 16*64,
-        max_height: 16*64,
-        allow_rotation: false,
-        texture_outlines: false,
-        border_padding: 0,
-        texture_padding: 0,
-        texture_extrusion: 0,
-        trim: false,
-    };
-    */
     
-    // let mut packer: TexturePacker<DynamicImage, String> = TexturePacker::new_skyline(config);
 
     // iterate_mod_textures(&mut packer);
 
@@ -277,11 +288,10 @@ fn main() {
 
     
 
-    /*
+    
     let exporter = ImageExporter::export(&packer).unwrap();
         let mut file = File::create(with_path("/blah.png")).unwrap();
         exporter
             .write_to(&mut file, image::ImageFormat::Png)
             .unwrap();
-    */
 }
