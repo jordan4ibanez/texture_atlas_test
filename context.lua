@@ -31,6 +31,8 @@ print("ENDING TESTING DEBUG FUNCTIONS")
 
 print(crafter.directory)
 
+-- windows component
+
 local f = io.popen("dir " .. crafter.directory .. "\\mods /b /ad")
 
 for mod in f:lines() do
