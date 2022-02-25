@@ -3,8 +3,7 @@ print("------- begin lua ---------")
 print("CREATING LUA CONTEXT!")
 
 crafter = {
-    blocks = {
-    }
+    blocks = {}
 }
 
 current_loading_mod = ""
@@ -28,6 +27,7 @@ print("TESTING DEBUG FUNCTIONS")
 print("ENDING TESTING DEBUG FUNCTIONS")
 
 
+-- this loads all mods into main lua context
 
 print(crafter.directory)
 
